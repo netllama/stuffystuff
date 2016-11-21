@@ -15,8 +15,8 @@ if len(sys.argv) != 2:
 
 filename = str(sys.argv[1])
 print '\nProcessing {}'.format(filename)
-NS_regex = '^(<nobr>&nbsp;:&nbsp;){1}[SN]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,3}(s<br>)$'
-EW_regex = '^(<nobr>&nbsp;:&nbsp;){1}[EW]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,3}(s<br>)$'
+NS_regex = '^(<nobr>&nbsp;:&nbsp;){1}[SN]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,4}(s<br>)$'
+EW_regex = '^(<nobr>&nbsp;:&nbsp;){1}[EW]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,4}(s<br>)$'
 comment_html = '<nobr>Comment<br>\n'
 map_html = '<nobr>Map&nbsp;:&nbsp;<br>\n'
 nobr_data_br_regex = '^(<nobr>){1}[A-Za-z\/\.\s]+(<br>){1}$'
@@ -36,7 +36,7 @@ def getCoords(coords):
     minute = float(coords.split(';')[-1].split()[2].replace('m','')) / 60
     second = float(coords.split(';')[-1].split()[3].replace('s<br>','')) / 3600
     newCoords = str(deg + minute + second)
-    return '{}{}'.format(negative,newCoords)
+    return '{}{}'.format(negative, newCoords)
 
 for line in fileinput.input([filename]):
     match_nobr_data = re.match(nobr_data_br_regex, line)
@@ -57,9 +57,9 @@ for line in fileinput.input([filename]):
 spacer = '<nobr><br>\n' * ( nobr_data_br_counter + ( 22 - nobr_data_br_counter ))
 if rewriteFileNS and rewriteFileEW:
     mapHTML = '''
-<nobr><iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?f=q&amp;source=s_q&amp;hl=en&amp;geocode=&amp;q={},{}&amp;aq=&amp;sll=37.6,-95.665&amp;sspn=48.408958,76.201172&amp;ie=UTF8&amp;t=m&amp;z=14&amp;ll={},{}&amp;output=embed"></iframe><br>
+<nobr><iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.com/maps?f=q&amp;source=s_q&amp;hl=en&amp;geocode=&amp;q={},{}&amp;aq=&amp;sll=37.6,-95.665&amp;sspn=48.408958,76.201172&amp;ie=UTF8&amp;t=m&amp;z=11&amp;ll={},{}&amp;output=embed"></iframe><br>
 '''.format(NS_coords, EW_coords, NS_coords, EW_coords)
-    for line in fileinput.input([filename],inplace=True):
+    for line in fileinput.input([filename], inplace=True):
     	if line == comment_html:
 	    sys.stdout.write (line + map_html + spacer)
 	else:
