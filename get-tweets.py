@@ -13,7 +13,7 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 
-CONN_STRING = 'host= dbname= user= password="" port=5432'
+CONN_STRING = ''
 
 def main():
     """Main func."""
@@ -89,12 +89,16 @@ def max_id():
 	return last_id, first_id
     last_id = first_last_qry[0][-1]
     first_id = first_last_qry[0][0]
-    print '{}\t{}'.format(last_id, first_id)
+    #print '{}\t{}'.format(last_id, first_id)
     return last_id, first_id
 
 
 def oauth_login():
     """Credentials for OAuth."""
+    consumer_key = ''
+    consumer_secret = ''
+    access_token = ''
+    access_token_secret = ''
 
     # Creating the authentication
     auth = tweepy.OAuthHandler(consumer_key,
@@ -108,8 +112,16 @@ def get_tweets(last_id):
     """Get tweets from timeline."""
     latest_timeline = []
     t_api = oauth_login()
-    for item in tweepy.Cursor(t_api.home_timeline, since_id=last_id).items():
-    	latest_timeline.append(item)
+    try:
+    	for item in tweepy.Cursor(t_api.home_timeline, since_id=last_id).items():
+    	    latest_timeline.append(item)
+    except tweepy.TweepError as err:
+    	print 'FAILED to get home_timeline due to error:\t{}'.format(err)
+    try:
+    	for item in tweepy.Cursor(t_api.mentions_timeline, since_id=last_id).items():
+    	    latest_timeline.append(item)
+    except tweepy.TweepError as err:
+    	print 'FAILED to get mentions_timeline due to error:\t{}'.format(err)
     return latest_timeline
 
 
@@ -140,7 +152,7 @@ def insert_tweets(tweets):
     insert_sql = 'INSERT INTO tweets (id, tstamp, username, tweet) VALUES (%s, %s, %s, %s)'
     insert_worked = True
     for row in tweets_sql_vals:
-    	print row
+    	#print row
     	insert_status = db_qry([insert_sql, row], 'insert')
     	if not insert_status:
 	    insert_worked = False
