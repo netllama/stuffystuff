@@ -89,7 +89,6 @@ def max_id():
 	return last_id, first_id
     last_id = first_last_qry[0][-1]
     first_id = first_last_qry[0][0]
-    #print '{}\t{}'.format(last_id, first_id)
     return last_id, first_id
 
 
@@ -111,6 +110,7 @@ def oauth_login():
 def get_tweets(last_id):
     """Get tweets from timeline."""
     latest_timeline = []
+    tweets = {}
     t_api = oauth_login()
     try:
     	for item in tweepy.Cursor(t_api.home_timeline, since_id=last_id).items():
@@ -122,7 +122,10 @@ def get_tweets(last_id):
     	    latest_timeline.append(item)
     except tweepy.TweepError as err:
     	print 'FAILED to get mentions_timeline due to error:\t{}'.format(err)
-    return latest_timeline
+    if latest_timeline:
+    	# remove duplicate keys
+    	tweets = {t.id_str: t for t in latest_timeline}
+    return tweets.values()
 
 
 def utc_to_local(utc_dt):
@@ -131,6 +134,7 @@ def utc_to_local(utc_dt):
     local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
     # strip off timezone offset, as it confuses the DB
     return local_tz.normalize(local_dt)
+
 
 def insert_tweets(tweets):
     """Insert new tweets into database."""
@@ -142,8 +146,10 @@ def insert_tweets(tweets):
 	#print tweet_data.entities['urls']
 	if not tweet_data.entities['urls']:
 	    # tweet has no URL!?
-	    continue
-	status_url = [tweet_data.entities['urls'][0]['expanded_url']]
+	    # print 'NO URL:\t{}'.format(tweet_data.text)
+	    status_url = ['https://twitter.com']
+	else:
+	    status_url = [tweet_data.entities['urls'][0]['expanded_url']]
 	author = tweet_data.author.screen_name
     	tweet_vals = [tweet_data.id_str, local_tz.replace(tzinfo=None),
 	    	      author, tweet_data.text]
@@ -158,6 +164,17 @@ def insert_tweets(tweets):
 	    insert_worked = False
 	    print 'Failed to insert:\t{}\t{}'.format(insert_sql, row)
     return insert_worked, tweets_payload
+
+
+def parse_url(desc):
+    """Convert URL into HTML link."""
+    new_desc = desc
+    desc_list = desc.split(' ')
+    if desc_list and desc_list[-1].startswith('http'):
+    	url = desc_list[-1]
+	html_url = '<A HREF="{u}">{u}</a>'.format(u=url)
+	new_desc = desc.replace(url, html_url)
+    return u'{}'.format(new_desc)
 
 
 def make_rss_feed(tweets):
@@ -177,8 +194,7 @@ def make_rss_feed(tweets):
     	fe.guid(tweet[0])
     	# need to re-add TZ info to make this work
     	fe.pubdate(tweet[1].replace(tzinfo=tz))
-	#desc = clean(tweet[3])
-	desc = u'{}'.format(tweet[3].encode('utf-8'))
+	desc = parse_url(tweet[3].encode('utf-8'))
 	# author: desc
 	title = u'{}: {}'.format(tweet[2], desc)
     	fe.title(title)
