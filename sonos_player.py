@@ -31,10 +31,7 @@ class HttpServer(Thread):
         super(HttpServer, self).__init__()
         self.daemon = True
         handler = SimpleHTTPRequestHandler
-	try:
-            self.httpd = TCPServer(("", port), handler)
-	except Exception as err:
-	    print 'EEEE\t{}'.format(err)
+        self.httpd = TCPServer(("", port), handler)
 
     def run(self):
         """Start the server"""
@@ -43,7 +40,7 @@ class HttpServer(Thread):
 
     def stop(self):
         """Stop the server"""
-        print('Stop HTTP server')
+        #print('Stop HTTP server')
         self.httpd.socket.close()
 
 
@@ -96,7 +93,11 @@ def play_tracks(port, args, here, zone, docroot):
 	mp3_url = '{u}/{m}'.format(u=url, m=quote(mp3))
 	print 'Adding to queue:\t{}'.format(mp3_url)
 	print 'Playing track:\t{} of {}'.format(track_counter, total_tracks)
-	zone.play_uri(uri=mp3_url, title='test00101')
+	try:
+	    zone.play_uri(uri=mp3_url, title='test00101')
+	except Exception as err:
+	    print 'Failed to play {} due to error:\t{}'.format(mp3, err)
+	    continue
 	duration = zone.get_current_track_info()['duration']
 	while zone.get_current_transport_info()['current_transport_state'] != 'STOPPED':
 	    # wait for track to finish playing
@@ -110,9 +111,9 @@ def play_tracks(port, args, here, zone, docroot):
 
 def main():
     # Settings
-    docroot = '/media0/music'
     port = 61823
     args = parse_args()
+    docroot = args.docroot
     here = os.getcwd()
 
     # Get the zone
@@ -166,6 +167,9 @@ def parse_args():
     	    	    	help='play on all zones')
     parser.add_argument('--random', '-r', action='store_true', default=False,
     	    	    	help='randomize the order of tracks')
+    parser.add_argument('--docroot', '-d', action='store', default='/media0/music',
+    	    	    	help='Embedded web server doc root. All mp3 files must be' +
+			' under this directory hierarchy')
     return parser.parse_args()
 
 
