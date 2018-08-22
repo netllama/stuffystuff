@@ -72,7 +72,6 @@ def controller(zone):
     """Control currently playing track."""
     keep_polling = True
     while keep_polling:
-    	print '_FINISH = {}'.format(_FINISH)
     	if _FINISH:
 	    # catch the abort signal to avoid deadlock
 	    break
@@ -120,7 +119,7 @@ def play_tracks(port, args, here, zone, docroot):
 	control_thread.start()
     	track_counter += 1
 	mp3_url = '{u}/{m}'.format(u=url, m=quote(mp3))
-	print 'Adding to queue:\t{}'.format(mp3_url)
+	print 'Adding to queue:\t{}'.format(mp3)
 	print 'Playing track:\t{} of {}'.format(track_counter, total_tracks)
 	try:
 	    zone.play_uri(uri=mp3_url, title='test00101')
