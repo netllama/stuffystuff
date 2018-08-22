@@ -10,6 +10,7 @@ Keyboard controls:
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+import logging
 import argparse
 from random import shuffle
 import os
@@ -23,32 +24,58 @@ from SocketServer import TCPServer
 from soco.discovery import by_name, discover
 
 
+_FINISH = False
+
 class HttpServer(Thread):
-    """A simple HTTP Server in its own thread"""
+    """A simple HTTP Server in its own thread."""
 
     def __init__(self, docroot, port):
+    	patch_broken_pipe_error()
     	os.chdir(docroot)
         super(HttpServer, self).__init__()
         self.daemon = True
         handler = SimpleHTTPRequestHandler
+	sys.stderr = open('/dev/null', 'w', 1)
         self.httpd = TCPServer(("", port), handler)
 
     def run(self):
-        """Start the server"""
-        #print('Start HTTP server')
+        """Start the server."""
         self.httpd.serve_forever()
 
     def stop(self):
-        """Stop the server"""
-        #print('Stop HTTP server')
+        """Stop the server."""
         self.httpd.socket.close()
+
+
+def patch_broken_pipe_error():
+    """Monkey Patch BaseServer.handle_error to not write
+    a stacktrace to stderr on broken pipe.
+    https://stackoverflow.com/a/7913160"""
+    import sys
+    from SocketServer import BaseServer
+
+    handle_error = BaseServer.handle_error
+
+    def my_handle_error(self, request, client_address):
+        type, err, tb = sys.exc_info()
+        # there might be better ways to detect the specific erro
+        if repr(err) == "error(32, 'Broken pipe')":
+            # you may ignore it...
+            pass
+        else:
+            handle_error(self, request, client_address)
+
+    BaseServer.handle_error = my_handle_error
 
 
 def controller(zone):
     """Control currently playing track."""
     keep_polling = True
-    paused = False
     while keep_polling:
+    	print '_FINISH = {}'.format(_FINISH)
+    	if _FINISH:
+	    # catch the abort signal to avoid deadlock
+	    break
     	device_state = zone.get_current_transport_info()['current_transport_state']
     	control_input = readchar.readchar()
 	if control_input.lower() == 's':
@@ -70,12 +97,13 @@ def controller(zone):
 	elif control_input.lower() == 'q':
 	    zone.volume -= 1
 	    print '\tVOLUME ({}) -'.format(zone.volume)
-	time.sleep(0.2)
-	    
+	time.sleep(0.1)
+    return None
 
 
 def play_tracks(port, args, here, zone, docroot):
     """Play audio tracks."""
+    global _FINISH
     # shuffle playlist
     playlist = args.files
     if args.random:
@@ -87,6 +115,7 @@ def play_tracks(port, args, here, zone, docroot):
     total_tracks = len(playlist)
     track_counter = 0
     for mp3 in playlist:
+	_FINISH = False
     	control_thread = Thread(target=controller, args=(zone,))
 	control_thread.start()
     	track_counter += 1
@@ -106,11 +135,13 @@ def play_tracks(port, args, here, zone, docroot):
 	    # print current progress /duration
 	    sys.stdout.write('\r{p} / {d}'.format(p=position, d=duration))
 	    sys.stdout.flush()
-	control_thread.join()
+	_FINISH = True
+	control_thread.join(timeout=1)
 
 
 def main():
     # Settings
+    global _FINISH
     port = 61823
     args = parse_args()
     docroot = args.docroot
@@ -122,16 +153,17 @@ def main():
     # Check if a zone by the given name was found
     if zone is None:
         zone_names = [zone_.player_name for zone_ in discover()]
-        print("No Sonos player named '{}'. Player names are {}"\
-              .format(args.zone, zone_names))
+        print("No Sonos player named '{}'. Player names are {}".format(args.zone,
+	    	    	    	    	    	    	    	       zone_names))
         sys.exit(1)
 
     # Check whether the zone is a coordinator (stand alone zone or
     # master of a group)
     if not zone.is_coordinator:
-        print("The zone '{}' is not a group master, and therefore cannot "
-              "play music. Please use '{}' in stead"\
-              .format(args.zone, zone.group.coordinator.player_name))
+    	msg = "The zone '{}' is not a group master, and therefore cannot "
+	msg += "play music. Please use '{}' in stead".format(args.zone,
+	    	    	    	    	    	    	     zone.group.coordinator.player_name)
+        print msg
         sys.exit(2)
     if args.party:
     	zone.partymode()
@@ -173,4 +205,5 @@ def parse_args():
     return parser.parse_args()
 
 
-main()
+if __name__ == '__main__':
+    main()
