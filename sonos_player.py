@@ -4,8 +4,9 @@
 Keyboard controls:
     p: pause currently playing track
     s: stop playing current track
-    l: increase volume
-    q: decrease volume
+    u: increase volume
+    d: decrease volume
+    q: quit
 """
 
 import warnings
@@ -85,17 +86,25 @@ def controller(zone):
 	    continue
 	elif control_input.lower() == 'p' and device_state == 'PAUSED_PLAYBACK':
 	    # unpause
+	    print '\t{}'.format(device_state)
 	    zone.play()
 	    print '\tRESUME'
-	elif control_input.lower() == 'p' and device_state == 'PLAYING':
+	elif control_input.lower() == 'p' and device_state in ['PLAYING', 'RESUME']:
+	    # pause
+	    print '\t{}'.format(device_state)
 	    zone.pause()
 	    print '\tPAUSED'
-	elif control_input.lower() == 'l':
+	elif control_input.lower() == 'u':
+	    # volume up
 	    zone.volume += 1
 	    print '\tVOLUME ({}) +'.format(zone.volume)
-	elif control_input.lower() == 'q':
+	elif control_input.lower() == 'd':
+	    # volume down
 	    zone.volume -= 1
 	    print '\tVOLUME ({}) -'.format(zone.volume)
+	elif control_input.lower() == 'q':
+	    zone.stop()
+	    sys.exit()
 	time.sleep(0.1)
     return None
 
@@ -119,7 +128,7 @@ def play_tracks(port, args, here, zone, docroot):
 	control_thread.start()
     	track_counter += 1
 	mp3_url = '{u}/{m}'.format(u=url, m=quote(mp3))
-	print 'Adding to queue:\t{}'.format(mp3)
+	print '\nAdding to queue:\t{}'.format(mp3)
 	print 'Playing track:\t{} of {}'.format(track_counter, total_tracks)
 	try:
 	    zone.play_uri(uri=mp3_url, title='test00101')
@@ -156,6 +165,12 @@ def main():
 	    	    	    	    	    	    	    	       zone_names))
         sys.exit(1)
 
+    # remove other members from the group
+    for member in zone.group.members.copy():
+    	if member.get_speaker_info()['zone_name'] != args.zone:
+	    # remove group member that isn't the zone we want
+	    zone.group.members.discard(member)
+
     # Check whether the zone is a coordinator (stand alone zone or
     # master of a group)
     if not zone.is_coordinator:
@@ -185,8 +200,9 @@ def parse_args():
     description = 'Play local files with Sonos by running a local web server'
     description += '\n\nKeyboard controls:\n\tp: pause currently playing track'
     description += '\n\ts: stop playing current track'
-    description += '\n\tl: increase volume'
-    description += '\n\tq: decrease volume'
+    description += '\n\tu: increase volume'
+    description += '\n\td: decrease volume'
+    description += '\n\tq: quit'
     parser = argparse.ArgumentParser(description=description,
             	    	    	     formatter_class=argparse.RawTextHelpFormatter)
 
