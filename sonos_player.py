@@ -102,10 +102,9 @@ def controller(zone):
             zone.volume -= 1
             print '\tVOLUME ({}) -'.format(zone.volume)
         elif control_input.lower() == 'q':
+	    # quit
             zone.stop()
-            print 'SSSTOP'
-            sys.exit()
-            print '\nEXIT'
+	    os._exit()
         time.sleep(0.1)
     return None
 
@@ -175,9 +174,8 @@ def main():
     # Check whether the zone is a coordinator (stand alone zone or
     # master of a group)
     if not zone.is_coordinator:
-        msg = "The zone '{}' is not a group master, and therefore cannot "
-        msg += "play music. Please use '{}' instead".format(args.zone,
-                                                            zone.group.coordinator.player_name)
+        msg = "The zone '{}' is not a group master, and therefore cannot ".format(args.zone)
+        msg += "play music. Please use '{}' instead".format(zone.group.coordinator.player_name)
         print msg
         sys.exit(2)
     if args.party:
