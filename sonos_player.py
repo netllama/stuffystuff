@@ -17,6 +17,7 @@ import os
 import sys
 import time
 import readchar
+import signal
 from urllib import quote
 from threading import Thread
 from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -105,7 +106,7 @@ def controller(zone):
 	    # quit
             zone.stop()
 	    print '\tEXITING'
-	    os._exit()
+	    os.kill(os.getpid(), signal.SIGKILL)
         time.sleep(0.1)
     return None
 
@@ -132,6 +133,7 @@ def play_tracks(port, args, here, zone, docroot):
         print '\nAdding to queue:\t{}'.format(mp3)
         print 'Playing track:\t{} of {}'.format(track_counter, total_tracks)
         try:
+	    zone.unjoin()  # remove other members from the group
             zone.play_uri(uri=mp3_url, title='test00101')
         except Exception as err:
             print 'Failed to play {} due to error:\t{}'.format(mp3, err)
@@ -165,12 +167,6 @@ def main():
         print("No Sonos player named '{}'. Player names are {}".format(args.zone,
                                                                        zone_names))
         sys.exit(1)
-
-    # remove other members from the group
-    for member in zone.group.members.copy():
-        if member.get_speaker_info()['zone_name'] != args.zone:
-            # remove group member that isn't the zone we want
-            zone.group.members.discard(member)
 
     # Check whether the zone is a coordinator (stand alone zone or
     # master of a group)
