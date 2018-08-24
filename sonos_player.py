@@ -104,6 +104,7 @@ def controller(zone):
         elif control_input.lower() == 'q':
 	    # quit
             zone.stop()
+	    print '\tEXITING'
 	    os._exit()
         time.sleep(0.1)
     return None
