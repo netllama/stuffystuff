@@ -131,7 +131,7 @@ def play_tracks(port, args, here, zone, docroot):
         track_counter += 1
         mp3_url = '{u}/{m}'.format(u=url, m=quote(mp3))
         print '\nAdding to queue:\t{}'.format(mp3)
-        print 'Playing track:\t{} of {}'.format(track_counter, total_tracks)
+        print '\nPlaying track:\t{} of {}'.format(track_counter, total_tracks)
         try:
 	    if not args.party:
 	    	zone.unjoin()  # remove other members from the group
