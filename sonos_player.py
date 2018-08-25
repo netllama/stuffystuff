@@ -133,7 +133,8 @@ def play_tracks(port, args, here, zone, docroot):
         print '\nAdding to queue:\t{}'.format(mp3)
         print 'Playing track:\t{} of {}'.format(track_counter, total_tracks)
         try:
-	    zone.unjoin()  # remove other members from the group
+	    if not args.party:
+	    	zone.unjoin()  # remove other members from the group
             zone.play_uri(uri=mp3_url, title='test00101')
         except Exception as err:
             print 'Failed to play {} due to error:\t{}'.format(mp3, err)
