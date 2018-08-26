@@ -89,7 +89,7 @@ def controller(zone):
             print '\t{}'.format(device_state)
             zone.play()
             print '\tRESUME'
-        elif control_input.lower() == 'p' and device_state in ['PLAYING', 'RESUME']:
+        elif control_input.lower() == 'p' and device_state in ['PLAYING', 'RESUME', 'TRANSITIONING']:
             # pause
             print '\t{}'.format(device_state)
             zone.pause()
