@@ -139,6 +139,7 @@ def play_tracks(port, args, here, zone, docroot):
         except Exception as err:
             print 'Failed to play {} due to error:\t{}'.format(mp3, err)
             continue
+        time.sleep(1)
         duration = zone.get_current_track_info()['duration']
         while zone.get_current_transport_info()['current_transport_state'] != 'STOPPED':
             # wait for track to finish playing
