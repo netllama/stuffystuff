@@ -103,10 +103,10 @@ def controller(zone):
             zone.volume -= 1
             print '\tVOLUME ({}) -'.format(zone.volume)
         elif control_input.lower() == 'q':
-	    # quit
+            # quit
             zone.stop()
-	    print '\tEXITING'
-	    os.kill(os.getpid(), signal.SIGKILL)
+            print '\tEXITING'
+            os.kill(os.getpid(), signal.SIGKILL)
         time.sleep(0.1)
     return None
 
@@ -133,8 +133,8 @@ def play_tracks(port, args, here, zone, docroot):
         print '\nAdding to queue:\t{}'.format(mp3)
         print '\nPlaying track:\t{} of {}'.format(track_counter, total_tracks)
         try:
-	    if not args.party:
-	    	zone.unjoin()  # remove other members from the group
+            if not args.party:
+                zone.unjoin()  # remove other members from the group
             zone.play_uri(uri=mp3_url, title='test00101')
         except Exception as err:
             print 'Failed to play {} due to error:\t{}'.format(mp3, err)
@@ -207,14 +207,14 @@ def parse_args():
     parser.add_argument('--zone', '-z', help='The name of the zone to play from',
                         required=True)
     parser.add_argument('--files', '-f', required=True,
-    	    	    	help='Space separated list of files to play',
+                        help='Space separated list of files to play',
                         nargs='+')
     parser.add_argument('--party', '-p', default=False, action='store_true',
                         help='play on all zones')
     parser.add_argument('--random', '-r', action='store_true', default=False,
                         help='randomize the order of tracks')
     parser.add_argument('--docroot', '-d', action='store',
-    	    	    	default='/media0/music',
+                        default='/media0/music',
                         help='Embedded web server doc root. All mp3 files must be' +
                         ' under this directory hierarchy')
     return parser.parse_args()
