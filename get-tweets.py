@@ -6,6 +6,7 @@ import psycopg2.extras
 import tweepy
 import datetime
 import pytz
+import re
 from curses import ascii
 from feedgen.feed import FeedGenerator
 import sys
@@ -113,12 +114,13 @@ def get_tweets(last_id):
     tweets = {}
     t_api = oauth_login()
     try:
-    	for item in tweepy.Cursor(t_api.home_timeline, since_id=last_id).items():
+    	for item in tweepy.Cursor(t_api.home_timeline, since_id=last_id, tweet_mode='extended').items():
     	    latest_timeline.append(item)
     except tweepy.TweepError as err:
     	print 'FAILED to get home_timeline due to error:\t{}'.format(err)
     try:
-    	for item in tweepy.Cursor(t_api.mentions_timeline, since_id=last_id).items():
+    	for item in tweepy.Cursor(t_api.mentions_timeline, since_id=last_id, tweet_mode='extended').items():
+	    #print '{}\t{}'.format(item.author.screen_name, item.text)
     	    latest_timeline.append(item)
     except tweepy.TweepError as err:
     	print 'FAILED to get mentions_timeline due to error:\t{}'.format(err)
@@ -138,6 +140,7 @@ def utc_to_local(utc_dt):
 
 def insert_tweets(tweets):
     """Insert new tweets into database."""
+    url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     tweets_sql_vals = []
     tweets_payload = []
     for tweet_data in tweets:
@@ -145,14 +148,19 @@ def insert_tweets(tweets):
 	local_tz = utc_to_local(tweet_data.created_at)
 	#print tweet_data.entities['urls']
 	if not tweet_data.entities['urls']:
-	    # tweet has no URL!?
+	    # tweet has no explicit URL!?
+            # perform regex match for URL
 	    # print 'NO URL:\t{}'.format(tweet_data.text)
-	    status_url = ['https://twitter.com']
+            urls = re.findall(url_regex, tweet_data.full_text)
+            if urls:
+                status_url = urls[-1:]
+            else:
+	        status_url = ['https://twitter.com']
 	else:
 	    status_url = [tweet_data.entities['urls'][0]['expanded_url']]
 	author = tweet_data.author.screen_name
     	tweet_vals = [tweet_data.id_str, local_tz.replace(tzinfo=None),
-	    	      author, tweet_data.text]
+	    	      author, tweet_data.full_text]
 	tweets_sql_vals.append(tweet_vals)
 	tweets_payload.append(tweet_vals + status_url)
     insert_sql = 'INSERT INTO tweets (id, tstamp, username, tweet) VALUES (%s, %s, %s, %s)'
@@ -193,7 +201,9 @@ def make_rss_feed(tweets):
     	fe = fg.add_item()
     	fe.guid(tweet[0])
     	# need to re-add TZ info to make this work
-    	fe.pubdate(tweet[1].replace(tzinfo=tz))
+    	fe.pubDate(tweet[1].replace(tzinfo=tz))
+	#desc = clean(tweet[3])
+	#desc = u'{}'.format(tweet[3].encode('utf-8'))
 	desc = parse_url(tweet[3].encode('utf-8'))
 	# author: desc
 	title = u'{}: {}'.format(tweet[2], desc)
