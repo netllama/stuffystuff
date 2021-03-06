@@ -27,6 +27,14 @@ nobr_2space_counter = 0
 rewriteFileNS = False
 rewriteFileEW = False
 
+
+def fix_encoding(filename):
+    """Fix encoding issues."""
+    tmp_file = '/tmp/0.html'
+    iconv_cmd = f'iconv -t utf-8//IGNORE {filename} > {tmp_file} ; mv {tmp_file} {filename}'
+    os.system(iconv_cmd)
+
+
 def getCoords(coords):
     negative = ''
     direction = coords.split(';')[-1].split()[0]
@@ -38,7 +46,16 @@ def getCoords(coords):
     newCoords = str(deg + minute + second)
     return f'{negative}{newCoords}'
 
-for line in fileinput.input([filename], openhook=fileinput.hook_encoded("utf-8")):
+
+try:
+    for l in fileinput.input([filename], openhook=fileinput.hook_encoded("utf-8")):
+        continue
+except UnicodeDecodeError:
+    print(f'fixing {filename} encoding')
+    fix_encoding(filename)
+	
+
+for line in fileinput.FileInput([filename]):
     match_nobr_data = re.match(nobr_data_br_regex, line)
     if match_nobr_data:
     	nobr_data_br_counter += 1
@@ -61,7 +78,7 @@ if rewriteFileNS and rewriteFileEW:
 src="https://maps.google.com/maps?f=q&amp;source=s_q&amp;hl=en&amp;geocode=&amp;q={},{}&amp;aq=&amp;sll=37.6,-95.665&amp;sspn=48.408958,76.201172&amp;ie=UTF8&amp;t=m&amp;z=11&amp;ll={},{}&amp;output=embed">
 </iframe><br>
 '''.format(NS_coords, EW_coords, NS_coords, EW_coords)
-    for line in fileinput.input([filename], inplace=True):
+    for line in fileinput.FileInput([filename], inplace=True):
         if line == comment_html:
             sys.stdout.write (line + map_html + spacer)
         else:
