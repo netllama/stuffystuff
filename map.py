@@ -15,11 +15,11 @@ if len(sys.argv) != 2:
 
 filename = str(sys.argv[1])
 print(f'\nProcessing {filename}')
-NS_regex = '^(<nobr>&nbsp;:&nbsp;){1}[SN]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,4}(s<br>)$'
-EW_regex = '^(<nobr>&nbsp;:&nbsp;){1}[EW]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,4}(s<br>)$'
+NS_regex = r'^(<nobr>&nbsp;:&nbsp;){1}[SN]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,4}(s<br>)$'
+EW_regex = r'^(<nobr>&nbsp;:&nbsp;){1}[EW]{1}\s+\d{1,3}d\s+\d{1,2}m\s+\d{1,2}\.\d{1,4}(s<br>)$'
 comment_html = '<nobr>Comment<br>\n'
 map_html = '<nobr>Map&nbsp;:&nbsp;<br>\n'
-nobr_data_br_regex = '^(<nobr>){1}[A-Za-z\/\.\s]+(<br>){1}$'
+nobr_data_br_regex = r'^(<nobr>){1}[A-Za-z\/\.\s]+(<br>){1}$'
 nobr_data_br_counter = 1
 nobr_2space_regex = '^(<nobr>&nbsp;:&nbsp;){1}.+$'
 nobr_2space = '<nobr>&nbsp;:&nbsp;'
